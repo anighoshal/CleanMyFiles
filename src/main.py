@@ -1,4 +1,4 @@
-# src/main.py
+# Week 1 : Initializing category folders in target directory
 
 import os
 
@@ -17,7 +17,9 @@ base_dir = os.path.expanduser("~/Downloads")  # We can change this to any direct
 
 # Function to create target folders for each category
 def setup_target_folders(base_path):
+
     """Create target folders for each category if they do not exist."""
+    
     for category in CATEGORIES.keys():
         folder_path = os.path.join(base_path, category)
         if not os.path.exists(folder_path):
@@ -34,4 +36,54 @@ if __name__ == "__main__":
 
 
 
+# Week 2 : File detection and Metadata extraction
+# Let's add a new function to scan and list files
 
+def scan_files(base_path):
+    """Scan the base directory and return a list of files."""
+    file_list = []
+
+    for root, dirs, files in os.walk(base_path):
+        # Skip the category folders we created
+        if os.path.basename(root) in CATEGORIES.keys():
+            continue
+
+        for file in files:
+            file_path = os.path.join(root, file)
+            if os.path.isfile(file_path):
+                file_info = extract_metadata(file_path)
+                file_list.append(file_info)
+
+    return file_list
+
+
+# Extract metadata from each file
+from datetime import datetime
+def extract_metadata(file_path):
+    """Extract metadata from a file."""
+    file_name = os.path.basename(file_path)
+    extension = os.path.splitext(file_name)[1]
+    size_bytes = os.path.getsize(file_path)
+    size_kb = size_bytes / 1024  # Convert to KB
+    last_modified = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+
+    return {
+        "name": file_name,
+        "path": file_path,
+        "extension": extension,
+        "size_kb": size_kb,
+        "last_modified": last_modified
+    }
+
+# Uppdate the main function to include file scanning
+
+if __name__ == "__main__":
+    print(f"Initializing CleanMyFiles in: {base_dir}")
+    setup_target_folders(base_dir)
+
+    print("\nScanning files...")
+    files = scan_files(base_dir)
+    print(f"Found {len(files)} files:\n")
+
+    for f in files:
+        print(f"{f['name']} | {f['extension']} | {f['size_kb']:.2f} KB | Last Modified: {f['last_modified']}")
