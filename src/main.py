@@ -75,7 +75,7 @@ def extract_metadata(file_path):
         "last_modified": last_modified
     }
 
-# Uppdate the main function to include file scanning
+# Update the main function to include file scanning
 
 if __name__ == "__main__":
     print(f"Initializing CleanMyFiles in: {base_dir}")
