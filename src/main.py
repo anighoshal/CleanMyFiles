@@ -87,3 +87,49 @@ if __name__ == "__main__":
 
     for f in files:
         print(f"{f['name']} | {f['extension']} | {f['size_kb']:.2f} KB | Last Modified: {f['last_modified']}")
+
+
+
+# Week 3: File categorization logic
+# Function to categorize files based on their extensions
+
+def get_file_category(extension):
+    # Return the category based on file extension
+    for category, ext_list in CATEGORIES.items():
+        if extension.lower() in ext_list:
+            return category
+    return "Others"
+
+# Building the file to folder mapping
+
+def map_files_to_categories(file_list):
+    # Map each file to its destination folder based on category
+    file_map = []
+
+    for file in file_list:
+        category = get_file_category(file["extension"])
+        target_folder = os.path.join(base_dir, category)
+        file_map.append({
+            "source": file["path"],
+            "destination": os.path.join(target_folder, file["name"]),
+            "category": category
+        })
+    return file_map
+
+# Update the main function to include file mapping
+if __name__ == "__main__":
+    print(f"Initializing CleanMyFiles in: {base_dir}")
+    setup_target_folders(base_dir)
+
+    print("\nScanning files...")
+    files = scan_files(base_dir)
+    print(f"Found {len(files)} files.\n")
+
+    print("\nCategorizing files...")
+    file_map = map_files_to_categories(files)
+
+    for entry in file_map:
+        print(f"{entry['source']} -> {entry['destination']} ({entry['category']})")
+
+
+
