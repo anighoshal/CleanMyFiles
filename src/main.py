@@ -133,3 +133,50 @@ if __name__ == "__main__":
 
 
 
+# Week 4: Organizing Engine - Move files to Category folders
+import shutil
+def move_file(source, destination):
+    """Move a file to it's destination folder"""
+    if not os.path.exists(source):
+        print(f"Source file not found: {source}")
+        return False
+    
+    # Handle duplicate file names
+    if os.path.exists(destination):
+        base, ext = os.path.splitext(destination)
+        counter = 1
+        while os.path.exists(destination):
+            destination = f"{base}_{counter}{ext}"
+            counter += 1
+
+    try:
+        shutil.move(source, destination)
+        print(f"Moved : {source} -> {destination}")
+        return True
+    except Exception as e:
+        print(f"Error moving {source} -> {e}")
+        return False
+    
+# Organizing files
+def organize_files(file_map):
+    """Move all files to their categorized folders"""
+    moved_count = 0
+    for entry in file_map:
+        success = move_file(entry["source"], entry["destination"])
+        if success:
+            moved_count += 1
+    print(f"\nOrganized {moved_count} files")
+
+if __name__ == "__main__":
+    print(f"Initializing CleanMyFiles in: {base_dir}")
+    setup_target_folders(base_dir)
+
+    print("\nScanning files...")
+    files = scan_files(base_dir)
+    print(f"Found {len(files)} files.\n")
+
+    print("Categorizing files...")
+    file_map = map_files_to_categories(files)
+
+    print("\nOrganizing files...")
+    organize_files(file_map)
