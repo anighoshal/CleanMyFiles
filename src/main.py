@@ -1,6 +1,13 @@
 # Week 1 : Initializing category folders in target directory
 
 import os
+import logging
+from logger import setup_logger
+import logging
+import shutil
+
+setup_logger()
+logging.info("Starting CleanMyFiles...")
 
 # Define categories and their associated file extensions
 CATEGORIES = {
@@ -134,38 +141,48 @@ if __name__ == "__main__":
 
 
 # Week 4: Organizing Engine - Move files to Category folders
-import shutil
-def move_file(source, destination):
-    """Move a file to it's destination folder"""
-    if not os.path.exists(source):
-        print(f"Source file not found: {source}")
-        return False
-    
-    # Handle duplicate file names
-    if os.path.exists(destination):
-        base, ext = os.path.splitext(destination)
-        counter = 1
-        while os.path.exists(destination):
-            destination = f"{base}_{counter}{ext}"
-            counter += 1
 
+
+
+
+# Week 5: Logging and error handling
+
+# Step 2: Initialize logger in main
+# Step 3: Add logging to file movement
+def move_file(source, destination):
+    # Check if source file exists
+    if not os.path.exists(source):
+        logging.warning(f"Source file not found: {source}")
+        return False
+
+    # Skip if destination file already exists
+    if os.path.exists(destination):
+        logging.info(f"Duplicate file skipped: {source}")
+        return False
+
+    # Attempt to move the file
     try:
         shutil.move(source, destination)
-        print(f"Moved : {source} -> {destination}")
+        logging.info(f"Moved: {source} → {destination}")
         return True
     except Exception as e:
-        print(f"Error moving {source} -> {e}")
+        logging.error(f"Error moving {source} → {destination}: {e}")
         return False
-    
-# Organizing files
+
+
+# Step 4: Log summary in organize_files
 def organize_files(file_map):
-    """Move all files to their categorized folders"""
     moved_count = 0
     for entry in file_map:
         success = move_file(entry["source"], entry["destination"])
         if success:
             moved_count += 1
-    print(f"\nOrganized {moved_count} files")
+        else:
+            logging.warning(f"Failed to move: {entry['source']}")
+
+    logging.info(f"Organizing complete. Total files moved: {moved_count}")
+    print(f"\n✅ Organized {moved_count} files.")
+
 
 if __name__ == "__main__":
     print(f"Initializing CleanMyFiles in: {base_dir}")
