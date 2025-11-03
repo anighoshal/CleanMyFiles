@@ -1,13 +1,12 @@
-# main.py
-
 import os
 import shutil
 import logging
+import threading
 from datetime import datetime
 from logger import setup_logger
 
 # -------------------------------
-# Week 1: Category Definitions
+# Category Definitions
 # -------------------------------
 
 CATEGORIES = {
@@ -20,7 +19,7 @@ CATEGORIES = {
 }
 
 # -------------------------------
-# Week 1: Create Category Folders
+# Create Category Folders
 # -------------------------------
 
 def setup_target_folders(base_path):
@@ -34,38 +33,40 @@ def setup_target_folders(base_path):
             print(f"Folder already exists: {folder_path}")
 
 # -------------------------------
-# Week 2: File Scanning & Metadata
+# File Scanning & Metadata (Optimized)
 # -------------------------------
 
 def scan_files(base_path):
-    """Scan the base directory and return a list of files."""
-    file_list = []
+    """Scan the base directory and yield file metadata one at a time."""
     for root, dirs, files in os.walk(base_path):
         if os.path.basename(root) in CATEGORIES.keys():
             continue
         for file in files:
             file_path = os.path.join(root, file)
             if os.path.isfile(file_path):
-                file_info = extract_metadata(file_path)
-                file_list.append(file_info)
-    return file_list
+                yield extract_metadata(file_path)
 
 def extract_metadata(file_path):
     """Extract metadata from a file."""
-    file_name = os.path.basename(file_path)
-    extension = os.path.splitext(file_name)[1]
-    size_kb = os.path.getsize(file_path) / 1024
-    last_modified = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
-    return {
-        "name": file_name,
-        "path": file_path,
-        "extension": extension,
-        "size_kb": size_kb,
-        "last_modified": last_modified
-    }
+    try:
+        stat = os.stat(file_path)
+        file_name = os.path.basename(file_path)
+        extension = os.path.splitext(file_name)[1]
+        size_kb = stat.st_size / 1024
+        last_modified = datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
+        return {
+            "name": file_name,
+            "path": file_path,
+            "extension": extension,
+            "size_kb": size_kb,
+            "last_modified": last_modified
+        }
+    except Exception as e:
+        logging.warning(f"Failed to extract metadata: {file_path} → {e}")
+        return None
 
 # -------------------------------
-# Week 3: Categorization Logic
+# Categorization Logic
 # -------------------------------
 
 def get_file_category(extension):
@@ -77,6 +78,7 @@ def get_file_category(extension):
 def map_files_to_categories(file_list, base_path):
     file_map = []
     for file in file_list:
+        if not file: continue  # skip failed metadata
         category = get_file_category(file["extension"])
         target_folder = os.path.join(base_path, category)
         file_map.append({
@@ -87,7 +89,7 @@ def map_files_to_categories(file_list, base_path):
     return file_map
 
 # -------------------------------
-# Week 4 & 5: File Movement & Logging
+# File Movement & Logging (Optimized)
 # -------------------------------
 
 def move_file(source, destination):
@@ -105,29 +107,30 @@ def move_file(source, destination):
         logging.error(f"Error moving {source} → {destination}: {e}")
         return False
 
-def organize_files(file_map):
+def organize_files(file_map, batch_size=100):
     moved_count = 0
-    for entry in file_map:
-        success = move_file(entry["source"], entry["destination"])
-        if success:
-            moved_count += 1
-        else:
-            logging.warning(f"Failed to move: {entry['source']}")
+    for i in range(0, len(file_map), batch_size):
+        batch = file_map[i:i+batch_size]
+        for entry in batch:
+            success = move_file(entry["source"], entry["destination"])
+            if success:
+                moved_count += 1
+            else:
+                logging.warning(f"Failed to move: {entry['source']}")
     logging.info(f"Organizing complete. Total files moved: {moved_count}")
     print(f"\n✅ Organized {moved_count} files.")
-    return moved_count  # ✅ Add this line
-
+    return moved_count
 
 # -------------------------------
-# Week 6: GUI Entry Point
+# GUI Entry Point (Threaded)
 # -------------------------------
 
 def main():
-    setup_logger()
+    setup_logger(log_level=logging.DEBUG)  # ✅ Enables detailed logging with rotation
     logging.info("Starting CleanMyFiles...")
 
     from gui import run_gui
-    run_gui()
+    threading.Thread(target=run_gui).start()  # ✅ Keeps GUI responsive
 
 if __name__ == "__main__":
     main()

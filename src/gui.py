@@ -1,7 +1,6 @@
-# src/gui.py
-
 import tkinter as tk
 from tkinter import filedialog, messagebox
+import threading
 from main import setup_target_folders, scan_files, map_files_to_categories, organize_files
 
 def run_gui():
@@ -35,15 +34,14 @@ def run_gui():
             messagebox.showwarning("No Folder", "Please select a folder first.")
             return
 
-        setup_target_folders(path)
-        files = scan_files(path)
-        file_map = map_files_to_categories(files, path)
-    
-        # ✅ Only call organize_files once and capture the return value
-        moved_count = organize_files(file_map)
-    
-        messagebox.showinfo("Done", f"Organized {moved_count} files.")
+        def background_task():
+            setup_target_folders(path)
+            files = list(scan_files(path))  # Convert generator to list once
+            file_map = map_files_to_categories(files, path)
+            moved_count = organize_files(file_map)
+            messagebox.showinfo("Done", f"Organized {moved_count} files.")
 
+        threading.Thread(target=background_task).start()
 
     organize_btn = tk.Button(window, text="Organize Files", command=organize_action, bg="#4CAF50", fg="white")
     organize_btn.pack(pady=20)
